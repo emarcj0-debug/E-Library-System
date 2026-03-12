@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Library | Student Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a0a00 0%, #2c1810 40%, #3e2723 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Floating book decorations */
+        body::before {
+            content: '\f02d  \f518  \f02d  \f5da  \f02d';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-size: 120px;
+            color: rgba(255, 200, 100, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 80px;
+            pointer-events: none;
+        }
+
+        .login-container {
+            display: flex;
+            width: 850px;
+            min-height: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Left panel - decorative */
+        .login-left {
+            flex: 1;
+            background: linear-gradient(180deg, #5d4037, #3e2723);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-left::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,193,7,0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* Use the local library icon instead of the Font Awesome book icon */
+        .login-left img.main-icon {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 15px rgba(255, 213, 79, 0.3));
+        }
+
+        .login-left h1 {
+            font-family: 'Playfair Display', serif;
+            color: #fff;
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .login-left p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .book-shelf {
+            display: flex;
+            gap: 8px;
+            margin-top: 30px;
+        }
+
+        .book-shelf .book {
+            width: 20px;
+            border-radius: 3px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .book-shelf .book:nth-child(1) { height: 60px; background: #e57373; animation-delay: 0s; }
+        .book-shelf .book:nth-child(2) { height: 70px; background: #64b5f6; animation-delay: 0.3s; }
+        .book-shelf .book:nth-child(3) { height: 55px; background: #81c784; animation-delay: 0.6s; }
+        .book-shelf .book:nth-child(4) { height: 65px; background: #ffb74d; animation-delay: 0.9s; }
+        .book-shelf .book:nth-child(5) { height: 50px; background: #ba68c8; animation-delay: 1.2s; }
+        .book-shelf .book:nth-child(6) { height: 72px; background: #4dd0e1; animation-delay: 1.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* Right panel - form */
+        .login-right {
+            flex: 1;
+            background: #faf3e8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 50px 40px;
+        }
+
+        .login-right h2 {
+            font-family: 'Playfair Display', serif;
+            color: #3e2723;
+            font-size: 30px;
+            margin-bottom: 8px;
+        }
+
+        .login-right .subtitle {
+            color: #8d6e63;
+            font-size: 13px;
+            margin-bottom: 35px;
+        }
+
+        .form-group {
+            width: 100%;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8d6e63;
+            font-size: 16px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 15px 14px 45px;
+            border: 2px solid #d7ccc8;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            background: #fff;
+            color: #3e2723;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #8d6e63;
+            box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.15);
+        }
+
+        .form-group input::placeholder {
+            color: #bcaaa4;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #5d4037, #3e2723);
+            color: #ffd54f;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #6d4c41, #4e342e);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(62, 39, 35, 0.3);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .signup-link {
+            margin-top: 25px;
+            color: #8d6e63;
+            font-size: 13px;
+        }
+
+        .signup-link a {
+            color: #5d4037;
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 2px solid #ffd54f;
+            padding-bottom: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .signup-link a:hover {
+            color: #3e2723;
+            border-bottom-color: #3e2723;
+        }
+
+        .home-link {
+            margin-top: 15px;
+        }
+
+        .home-link a {
+            color: #8d6e63;
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .home-link a:hover {
+            color: #3e2723;
+        }
+
+        .home-link a i {
+            margin-right: 5px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                width: 90%;
+                min-height: auto;
+            }
+
+            .login-left {
+                padding: 30px;
+            }
+
+            .login-left h1 {
+                font-size: 22px;
+            }
+
+            .login-right {
+                padding: 30px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <!-- Left Panel -->
+        <div class="login-left">
+            <img class="main-icon" src="Images/Icon.png" alt="E-Library Icon">
+            <h1>E-Library System</h1>
+            <p>Your gateway to a world of knowledge.<br>Access thousands of books anytime, anywhere.</p>
+            <div class="book-shelf">
+                <div class="book"></div>
+                <div class="book"></div>
+                <div class="book"></div>
+                <div class="book"></div>
+                <div class="book"></div>
+                <div class="book"></div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Login Form -->
+        <div class="login-right">
+            <h2>Welcome Back</h2>
+            <p class="subtitle">Sign in to continue reading</p>
+
+            <form action="index.php" method="post" style="width: 100%;">
+                <div class="form-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" placeholder="Username" name="txtuser" required>
+                </div>
+
+                <div class="form-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" placeholder="Password" name="txtpass" required>
+                </div>
+
+                <button type="submit" name="btnlogin" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> &nbsp;Log In
+                </button>
+            </form>
+
+            <p class="signup-link">
+                Don't have an account? <a href="registration.php">Sign Up</a>
+            </p>
+
+            <div class="home-link">
+                <a href="home.html"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
