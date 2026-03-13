@@ -30,11 +30,20 @@ function db_connect(): ?mysqli
 	// Use exceptions so we can catch and display a friendly message.
 	mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-	$DB_HOST = env('DB_HOST', 'localhost');
-	$DB_USER = env('DB_USER', 'root');
-	$DB_PASS = env('DB_PASS', '');
-	$DB_NAME = env('DB_NAME', 'db_library');
-	$DB_PORT = (int)(env('DB_PORT', '3306') ?? 3306);
+	// Optional: InfinityFree-friendly local config file (not committed)
+	$cfgFile = __DIR__ . '/config.php';
+	$cfg = null;
+	if (file_exists($cfgFile)) {
+		$cfg = require $cfgFile;
+	}
+
+	$dbCfg = is_array($cfg) ? ($cfg['db'] ?? null) : null;
+
+	$DB_HOST = (string)($dbCfg['host'] ?? env('DB_HOST', 'localhost'));
+	$DB_USER = (string)($dbCfg['user'] ?? env('DB_USER', 'root'));
+	$DB_PASS = (string)($dbCfg['pass'] ?? env('DB_PASS', ''));
+	$DB_NAME = (string)($dbCfg['name'] ?? env('DB_NAME', 'db_library'));
+	$DB_PORT = (int)($dbCfg['port'] ?? (int)(env('DB_PORT', '3306') ?? 3306));
 
 	try {
 		$cn = mysqli_connect($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME, $DB_PORT);

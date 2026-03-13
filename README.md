@@ -106,6 +106,54 @@ If you need a SQL bootstrap on your external DB, import `setup.sql` manually onc
 
 ---
 
+## Hosting on InfinityFree (recommended for PHP)
+
+InfinityFree is a classic PHP + MySQL host, so this project runs naturally there.
+
+### 1) Upload files
+
+Upload the contents of this project into your InfinityFree domain’s `htdocs/` folder.
+
+Security hardening:
+- Keep `.htaccess` (blocks access to `setup.sql`, `config.php`, etc.)
+
+### 2) Database
+
+1. Create a MySQL database + user in InfinityFree.
+2. Open phpMyAdmin from the InfinityFree control panel.
+3. Import `setup.sql` into your new database.
+
+### 3) Configure DB + SMTP (email verification)
+
+InfinityFree usually doesn’t support setting environment variables, so use `config.php`:
+
+1. Copy `config.example.php` → `config.php`
+2. Fill in:
+   - `db.host`, `db.name`, `db.user`, `db.pass`
+   - `app.base_url` (your InfinityFree domain)
+   - `smtp.*` (SMTP provider credentials)
+
+`config.php` is ignored by git (`.gitignore`) so you won’t leak credentials.
+
+### 4) PHPMailer dependency
+
+Email verification requires PHPMailer.
+
+On InfinityFree you typically **can’t run Composer**, so you have two options:
+
+**Option A (simplest): upload `vendor/`**
+- Run Composer locally (on your PC): install PHPMailer.
+- Upload the generated `vendor/` folder to InfinityFree.
+
+**Option B: use InfinityFree’s built-in mail (not recommended)**
+- Many free hosts block reliable email sending.
+
+### SMTP provider note
+
+Gmail SMTP sometimes works, sometimes gets blocked on free hosts. If Gmail fails, use a transactional SMTP provider (Brevo/SendGrid) and use their SMTP credentials.
+
+---
+
 ## Default Accounts
 
 | Role    | Username | Password   |

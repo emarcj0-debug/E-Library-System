@@ -1,0 +1,18 @@
+# InfinityFree / Apache runtime hardening
+Options -Indexes
+
+# Block access to sensitive files
+<FilesMatch "^(setup\.sql|composer\.(json|lock)|\.env(\..*)?|config\.php|mail_config\.php|README\.md)$">
+  Require all denied
+</FilesMatch>
+
+# Basic security headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# PHP settings (may be ignored depending on host)
+php_value upload_max_filesize 20M
+php_value post_max_size 20M

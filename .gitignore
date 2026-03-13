@@ -1,6 +1,6 @@
 /vendor/
-/composer.lock
 /mail_config.php
+ /config.php
 /.env
 
 # OS / tooling
