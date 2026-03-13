@@ -40,7 +40,7 @@ if (isset($_POST['btnlogin'])) {
 			}
 		}
 	} else {
-		$loginError = "<script>alert('Database connection failed.');</script>";
+		$loginError = "<script>alert(" . json_encode(db_friendly_error_message()) . ");</script>";
 	}
 }
 ?>

@@ -50,6 +50,16 @@ function db_connect(): ?mysqli
 		mysqli_set_charset($cn, 'utf8mb4');
 		return $cn;
 	} catch (mysqli_sql_exception $e) {
+		// Log the real error for debugging (viewable in hosting error logs)
+		error_log('DB connect failed: ' . $e->getMessage());
 		return null;
 	}
+}
+
+/**
+ * Helper to display a consistent error message when DB is unavailable.
+ */
+function db_friendly_error_message(): string
+{
+	return "Database connection failed. On shared hosting, make sure you created config.php from config.example.php and set the DB host/name/user/password correctly.";
 }

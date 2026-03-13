@@ -10,7 +10,12 @@ require_once __DIR__ . '/db.php';
 
 $cn = db_connect();
 
-if (isset($_POST['btnlogin']) && $cn) {
+if (!$cn) {
+	echo "<script>alert(" . json_encode(db_friendly_error_message()) . "); window.location.href='login.html';</script>";
+	exit;
+}
+
+if (isset($_POST['btnlogin'])) {
 	$email = trim($_POST['txtemail'] ?? '');
 	$password = trim($_POST['txtpass'] ?? '');
 
