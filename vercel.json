@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/index.php", "use": "vercel-php@0.6.0" }
+  ],
+  "routes": [
+    { "src": "/Images/(.*)", "dest": "/Images/$1" },
+    { "src": "/(.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|css|js))$", "dest": "/$1" },
+
+    { "src": "/$", "dest": "/api/index.php?page=home.html" },
+    { "src": "/home$", "dest": "/api/index.php?page=home.html" },
+
+    { "src": "/login$", "dest": "/api/index.php?page=login.html" },
+    { "src": "/admin$", "dest": "/api/index.php?page=admin.php" },
+
+    { "src": "/(.*)", "dest": "/api/index.php?page=$1" }
+  ]
+}

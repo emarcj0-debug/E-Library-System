@@ -1,3 +1,49 @@
+<?php
+session_start();
+require_once __DIR__ . '/db.php';
+
+$loginError = '';
+
+if (isset($_POST['btnlogin'])) {
+	$cn = db_connect();
+	if ($cn) {
+		$username = trim($_POST['txtuser'] ?? '');
+		$password = trim($_POST['txtpass'] ?? '');
+
+		if ($username === '' || $password === '') {
+			$loginError = "<script>alert('Please enter username and password.');</script>";
+		} else {
+			$stmt = mysqli_prepare(
+				$cn,
+				"SELECT id, acct_name FROM tbl_adminreg WHERE username = ? AND password = ? LIMIT 1"
+			);
+
+			if (!$stmt) {
+				$loginError = "<script>alert('Server error.');</script>";
+			} else {
+				mysqli_stmt_bind_param($stmt, 'ss', $username, $password);
+				mysqli_stmt_execute($stmt);
+				$result = mysqli_stmt_get_result($stmt);
+				$row    = mysqli_fetch_assoc($result);
+				mysqli_stmt_close($stmt);
+
+				if ($row) {
+					$_SESSION['role']      = 'admin';
+					$_SESSION['user_id']   = $row['id'];
+					$_SESSION['acct_name'] = $row['acct_name'];
+					$_SESSION['username']  = $username;
+					header('Location: admin_dashboard.php');
+					exit;
+				} else {
+					$loginError = "<script>alert('Login Failed');</script>";
+				}
+			}
+		}
+	} else {
+		$loginError = "<script>alert('Database connection failed.');</script>";
+	}
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +52,7 @@
 	<title>E-Library | Admin Login</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<style>
-		@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap');
+		@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 		* { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -100,7 +146,7 @@
 
 		.left h1 {
 			z-index: 1;
-			font-family: 'Playfair Display', serif;
+			font-family: 'Poppins', sans-serif;
 			font-size: 28px;
 			text-align: center;
 			margin-bottom: 10px;
@@ -124,7 +170,7 @@
 		}
 
 		.right h2 {
-			font-family: 'Playfair Display', serif;
+			font-family: 'Poppins', sans-serif;
 			color: #3e2723;
 			font-size: 30px;
 			margin-bottom: 8px;
@@ -256,46 +302,7 @@
 		</div>
 	</div>
 
-<?php
-
-require_once __DIR__ . '/db.php';
-
-$cn = db_connect();
-
-if (isset($_POST['btnlogin']) && $cn) {
-	$username = trim($_POST['txtuser'] ?? '');
-	$password = trim($_POST['txtpass'] ?? '');
-
-	if ($username === '' || $password === '') {
-		echo "<script>alert('Please enter username and password.');</script>";
-	} else {
-		$stmt = mysqli_prepare(
-			$cn,
-			"SELECT 1 FROM tbl_adminreg WHERE username = ? AND password = ? LIMIT 1"
-		);
-
-		if (!$stmt) {
-			echo "<script>alert('Server error: unable to prepare query.');</script>";
-		} else {
-			mysqli_stmt_bind_param($stmt, 'ss', $username, $password);
-			mysqli_stmt_execute($stmt);
-			mysqli_stmt_store_result($stmt);
-			$found = mysqli_stmt_num_rows($stmt) >= 1;
-			mysqli_stmt_close($stmt);
-
-			if ($found) {
-				echo "<script>
-					alert('Login Successful')
-					window.location.href = 'adminreg.php';
-				</script>";
-			} else {
-				echo "<script>alert('Login Failed');</script>";
-			}
-		}
-	}
-}
-
-?>
+<?= $loginError ?>
 
 </body>
 </html>

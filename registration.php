@@ -1,3 +1,103 @@
+<?php
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/mail_helper.php';
+
+$regMsg = '';
+
+if (isset($_POST['btnreg'])) {
+	$cn = db_connect();
+	if ($cn) {
+		$a = trim($_POST['txtan'] ?? '');
+		$b = trim($_POST['txtgender'] ?? '');
+		$email = trim($_POST['txtemail'] ?? '');
+		$c = ''; // username removed; we'll auto-generate from email
+		$d = trim($_POST['txtpw'] ?? '');
+		$confirm = trim($_POST['txtcpw'] ?? '');
+
+		if ($a === '' || $b === '' || $email === '' || $d === '' || $confirm === '') {
+			$regMsg = "<script>alert('Please complete all fields.');</script>";
+		} else {
+			if ($d !== $confirm) {
+				$regMsg = "<script>alert('Passwords do not match.');</script>";
+			} else {
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+				$regMsg = "<script>alert('Please enter a valid email address.');</script>";
+			} else {
+				$token = bin2hex(random_bytes(32));
+				$tokenHash = hash('sha256', $token);
+				$expires = date('Y-m-d H:i:s', time() + 60 * 60); // 1 hour
+
+				// Auto-generate a unique username (keeps existing DB schema/admin pages compatible)
+				$baseUser = strtolower(preg_replace('/[^a-z0-9]+/i', '', explode('@', $email)[0] ?? 'user'));
+				if ($baseUser === '') {
+					$baseUser = 'user';
+				}
+				$c = $baseUser;
+				$check = mysqli_prepare($cn, "SELECT id FROM tbl_login WHERE username = ? LIMIT 1");
+				if ($check) {
+					$suffix = 0;
+					while (true) {
+						$tmp = $suffix === 0 ? $baseUser : ($baseUser . $suffix);
+						mysqli_stmt_bind_param($check, 's', $tmp);
+						mysqli_stmt_execute($check);
+						$res = mysqli_stmt_get_result($check);
+						$exists = mysqli_fetch_assoc($res);
+						if (!$exists) {
+							$c = $tmp;
+							break;
+						}
+						$suffix++;
+						if ($suffix > 9999) {
+							break;
+						}
+					}
+					mysqli_stmt_close($check);
+				}
+
+				$stmt = mysqli_prepare($cn, "INSERT INTO tbl_login (acct_name, gender, email, username, password, role, borrow_limit, email_verified, email_verify_token_hash, email_verify_expires) VALUES (?, ?, ?, ?, ?, 'student', 3, 0, ?, ?)");
+				if ($stmt) {
+					mysqli_stmt_bind_param($stmt, 'sssssss', $a, $b, $email, $c, $d, $tokenHash, $expires);
+					$ok = false;
+					$insertError = null;
+					try {
+						$ok = mysqli_stmt_execute($stmt);
+					} catch (mysqli_sql_exception $e) {
+						$insertError = $e;
+					}
+					mysqli_stmt_close($stmt);
+
+					if ($ok) {
+						$config = require __DIR__ . '/mail_config.php';
+						$baseUrl = rtrim($config['app']['base_url'] ?? 'http://localhost/library', '/');
+						$verifyLink = $baseUrl . '/verify_email.php?token=' . urlencode($token);
+
+						try {
+							send_verification_email($email, $a, $verifyLink);
+							echo "<script>alert('Registration Successful! Please check your email to verify your account before logging in.'); window.location.href='login.html';</script>";
+							exit;
+						} catch (Throwable $e) {
+							echo "<script>alert('Account created, but verification email failed: " . addslashes($e->getMessage()) . "'); window.location.href='login.html';</script>";
+							exit;
+						}
+					} else {
+						// 1062 = duplicate key
+						if ($insertError instanceof mysqli_sql_exception && (int)$insertError->getCode() === 1062) {
+							$regMsg = "<script>alert('That email is already registered. Please login instead.');</script>";
+						} else {
+							$regMsg = "<script>alert('Registration failed. Please try again.');</script>";
+						}
+					}
+				} else {
+					$regMsg = "<script>alert('Server error: unable to prepare query.');</script>";
+				}
+			}
+			}
+		}
+	} else {
+		$regMsg = "<script>alert('Database connection failed.');</script>";
+	}
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +106,7 @@
 	<title>E-Library | Student Sign Up</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<style>
-		@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap');
+		@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 		* {
 			margin: 0;
@@ -86,7 +186,7 @@
 		}
 
 		.left h1 {
-			font-family: 'Playfair Display', serif;
+			font-family: 'Poppins', sans-serif;
 			font-size: 28px;
 			text-align: center;
 			margin-bottom: 10px;
@@ -111,7 +211,7 @@
 		}
 
 		.right h2 {
-			font-family: 'Playfair Display', serif;
+			font-family: 'Poppins', sans-serif;
 			color: #3e2723;
 			font-size: 30px;
 			margin-bottom: 6px;
@@ -140,7 +240,7 @@
 
 		.form-group input {
 			width: 100%;
-			padding: 14px 15px 14px 45px;
+			padding: 14px 15px 14px 78px;
 			border: 2px solid #d7ccc8;
 			border-radius: 12px;
 			font-size: 14px;
@@ -158,6 +258,27 @@
 
 		.form-group input::placeholder {
 			color: #bcaaa4;
+		}
+
+		.password-wrap {
+			position: relative;
+		}
+
+		.toggle-pass {
+			position: absolute;
+			right: 38px;
+			top: 50%;
+			transform: translateY(-50%);
+			background: transparent;
+			border: none;
+			color: #8d6e63;
+			cursor: pointer;
+			padding: 6px 8px;
+			border-radius: 10px;
+		}
+
+		.toggle-pass:hover {
+			background: rgba(141, 110, 99, 0.12);
 		}
 
 		.gender {
@@ -269,10 +390,15 @@
 			<h2>Create Account</h2>
 			<p class="subtitle">Sign up to start reading</p>
 
-			<form action="registration.php" method="post">
+			<form action="registration.php" method="post" id="regForm">
 				<div class="form-group">
 					<i class="fas fa-id-card"></i>
 					<input type="text" placeholder="Account Name" name="txtan" required>
+				</div>
+
+				<div class="form-group">
+					<i class="fas fa-envelope"></i>
+					<input type="email" placeholder="Email" name="txtemail" required>
 				</div>
 
 				<input type="hidden" name="txtgender" id="txtgender" required>
@@ -286,14 +412,20 @@
 					</label>
 				</div>
 
-				<div class="form-group">
-					<i class="fas fa-user"></i>
-					<input type="text" placeholder="Username" name="txtun" required>
+				<div class="form-group password-wrap">
+					<i class="fas fa-lock"></i>
+					<input id="txtpw" type="password" placeholder="Password" name="txtpw" required>
+					<button class="toggle-pass" type="button" id="togglePw" aria-label="Show password">
+						<i class="fa-regular fa-eye"></i>
+					</button>
 				</div>
 
-				<div class="form-group">
+				<div class="form-group password-wrap">
 					<i class="fas fa-lock"></i>
-					<input type="password" placeholder="Password" name="txtpw" required>
+					<input id="txtcpw" type="password" placeholder="Confirm Password" name="txtcpw" required>
+					<button class="toggle-pass" type="button" id="toggleCpw" aria-label="Show confirm password">
+						<i class="fa-regular fa-eye"></i>
+					</button>
 				</div>
 
 				<button type="submit" name="btnreg" class="btn-primary">
@@ -319,45 +451,37 @@
 				});
 			});
 		})();
+
+		(function () {
+			function bindToggle(inputId, btnId) {
+				var input = document.getElementById(inputId);
+				var btn = document.getElementById(btnId);
+				if (!input || !btn) return;
+				btn.addEventListener('click', function () {
+					var isPw = input.getAttribute('type') === 'password';
+					input.setAttribute('type', isPw ? 'text' : 'password');
+					btn.innerHTML = isPw ? '<i class="fa-regular fa-eye-slash"></i>' : '<i class="fa-regular fa-eye"></i>';
+				});
+			}
+
+			bindToggle('txtpw', 'togglePw');
+			bindToggle('txtcpw', 'toggleCpw');
+
+			var form = document.getElementById('regForm');
+			var pw = document.getElementById('txtpw');
+			var cpw = document.getElementById('txtcpw');
+			if (form && pw && cpw) {
+				form.addEventListener('submit', function (e) {
+					if (pw.value !== cpw.value) {
+						e.preventDefault();
+						alert('Passwords do not match.');
+						cpw.focus();
+					}
+				});
+			}
+		})();
 	</script>
 
+<?= $regMsg ?>
 </body>
 </html>
-
-<?php
-
-require_once __DIR__ . '/db.php';
-
-$cn = db_connect();
-
-if(isset($_POST['btnreg']) && $cn)
-{
-	$a = trim($_POST['txtan'] ?? '');
-	$b = trim($_POST['txtgender'] ?? '');
-	$c = trim($_POST['txtun'] ?? '');
-	$d = trim($_POST['txtpw'] ?? '');
-
-	if ($a === '' || $b === '' || $c === '' || $d === '') {
-		echo "<script>alert('Please complete all fields.');</script>";
-	} else {
-		$stmt = mysqli_prepare($cn, "INSERT INTO tbl_login (acct_name, gender, username, password) VALUES (?, ?, ?, ?)");
-		if ($stmt) {
-			mysqli_stmt_bind_param($stmt, 'ssss', $a, $b, $c, $d);
-			$ok = mysqli_stmt_execute($stmt);
-			mysqli_stmt_close($stmt);
-
-			if ($ok) {
-				echo"<script>
-				alert('Registration Successful')
-				window.location.href = 'login.html';
-				</script>";
-			} else {
-				echo "<script>alert('Registration failed. Please try again.');</script>";
-			}
-		} else {
-			echo "<script>alert('Server error: unable to prepare query.');</script>";
-		}
-	}
-}
-
-?>

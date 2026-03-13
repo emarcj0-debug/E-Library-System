@@ -1,0 +1,9 @@
+{
+  "name": "emarcj0-debug/e-library-system",
+  "description": "E-Library System (PHP + MySQL) deployed on Vercel",
+  "type": "project",
+  "require": {
+    "php": "^8.1",
+    "phpmailer/phpmailer": "^6.10"
+  }
+}

@@ -1,107 +1,48 @@
-<html>
-<head>
-<title>Admin Registration</title>
-</head>
-<center>
-<body>
-<form action  = 'home.html' method = 'post'>
-<table border = 10 style = 'border-color: #daa520; right: 0; height: 100%; width: 100%; position: fixed; top: 0;'> 
-<tr>
-<th style = 'text-align: right; height: 50;'>
-<input type = 'submit' value = 'Log Out' style = 'font-size: 25;' onclick = "location.href = home.html";>
-</th>
-</tr>
-</form>
-<form action  = 'adminreg.php' method = 'post'>
-<th>
-<label style = 'font-size:50; color:#cfb53b; font-weight:bold;'>
-Admin Registration
-</label>
-
-<br><br>
-
-<input type = 'text' placeholder = 'Account Name' name = 'txtan'required>
-
-<br><br>
-
-Gender:
-<input type = 'radio' id = 'lalake' onclick = 'male()'>Male
-<input type = 'radio' id = 'babae' onclick = 'female()'>Female
-
-<input type = 'text' name = 'txtgender' id = 'txtgender' required style = 'display: none;'>
-
-
-<script>
-function male()
-{
-babae.checked = false;
-txtgender.value = 'Male';
-}
-
-function female()
-{
-lalake.checked = false;	
-txtgender.value = 'Female';
-}
-</script>
-
-<br><br>
-
-<input type = 'text' placeholder = 'Username' name = 'txtun' required>
-
-<br><br>
-
-<input type = 'password' placeholder = 'Password' name = 'txtpw' required>
-
-<br><br>
-
-<input type = 'submit' value = 'Register' name = 'btnreg'>
-</th>
-</table>
-</form>
-</center>
-</body>
-</html>
-
 <?php
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/db.php';
+require_role('admin');
 
-$cn = mysqli_connect('localhost', 'root', '', 'db_library');
+if (isset($_POST['btnreg'])) {
+	$cn = db_connect();
+	if (!$cn) {
+		echo "<script>alert('Database connection failed');window.location.href='admin_dashboard.php';</script>";
+		exit;
+	}
 
-if(isset($_POST['btnreg']))
-{
-$a = $_POST['txtan'];
-$b = $_POST['txtgender'];
-$c = $_POST['txtun'];
-$d = $_POST['txtpw'];
+	$acctName = trim($_POST['txtan'] ?? '');
+	$gender   = trim($_POST['txtgender'] ?? '');
+	$username = trim($_POST['txtun'] ?? '');
+	$password = trim($_POST['txtpw'] ?? '');
 
-$sql = mysqli_query($cn, "insert into tbl_adminreg (acct_name, gender, username, password) values ('$a', '$b', '$c', '$d')");
+	if ($acctName === '' || $gender === '' || $username === '' || $password === '') {
+		echo "<script>alert('All fields are required');window.location.href='admin_dashboard.php';</script>";
+		exit;
+	}
 
-echo"<script>
-alert('Registration Successful')
-</script>";
+	// Check if username already exists
+	$check = mysqli_prepare($cn, "SELECT id FROM tbl_adminreg WHERE username = ?");
+	mysqli_stmt_bind_param($check, 's', $username);
+	mysqli_stmt_execute($check);
+	$result = mysqli_stmt_get_result($check);
 
-if(isset($_POST['btnlogin']))
+	if (mysqli_num_rows($result) > 0) {
+		echo "<script>alert('Username already exists');window.location.href='admin_dashboard.php';</script>";
+		mysqli_stmt_close($check);
+		exit;
+	}
+	mysqli_stmt_close($check);
 
-$a = $_POST['txtuser'];
-$b = $_POST['txtpass'];
+	$stmt = mysqli_prepare($cn, "INSERT INTO tbl_adminreg (acct_name, gender, username, password) VALUES (?, ?, ?, ?)");
+	mysqli_stmt_bind_param($stmt, 'ssss', $acctName, $gender, $username, $password);
 
-$sql = mysqli_query($cn, "select * from tbl_adminreg where username = '$a' and password = '$b'");
-
-$login = mysqli_num_rows($sql);
-
-if($login >= 1)
-{
-echo"<script>
-alert('Login Successful')
-window.location.href = 'adminreg.php';
-</script>";
+	if (mysqli_stmt_execute($stmt)) {
+		echo "<script>alert('Admin registered successfully!');window.location.href='admin_dashboard.php';</script>";
+	} else {
+		echo "<script>alert('Registration failed');window.location.href='admin_dashboard.php';</script>";
+	}
+	mysqli_stmt_close($stmt);
+} else {
+	header('Location: admin_dashboard.php');
 }
-else
-{
-echo"<script>
-alert('Login Failed')
-</script>";
-}	
-}
-
 ?>

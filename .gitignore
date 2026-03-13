@@ -1,0 +1,8 @@
+/vendor/
+/composer.lock
+/mail_config.php
+/.env
+
+# OS / tooling
+.DS_Store
+Thumbs.db

@@ -1,39 +1,60 @@
-<html>
-<head>
-<title>index</title>
-</head>
-<body>
-
 <?php
+/**
+ * index.php – Handles the student login POST from login.html.
+ * On success → student_dashboard.php
+ * On failure → back to login.html with alert.
+ */
 
-$cn = mysqli_connect('localhost', 'root', '', 'db_library');
+session_start();
+require_once __DIR__ . '/db.php';
 
-if(isset($_POST['btnlogin']))
-{
-$a = $_POST['txtuser'];
-$b = $_POST['txtpass'];
+$cn = db_connect();
 
-$sql = mysqli_query($cn, "select * from tbl_login where username = '$a' and password = '$b'");
+if (isset($_POST['btnlogin']) && $cn) {
+	$email = trim($_POST['txtemail'] ?? '');
+	$password = trim($_POST['txtpass'] ?? '');
 
-$login = mysqli_num_rows($sql);
+	if ($email === '' || $password === '') {
+		echo "<script>alert('Please enter email and password.'); window.location.href='login.html';</script>";
+		exit;
+	}
 
-if($login >= 1)
-{
-echo"<script>
-alert('Login Successful')
-window.location.href = 'home.html';
-</script>";
+	if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+		echo "<script>alert('Please enter a valid email address.'); window.location.href='login.html';</script>";
+		exit;
+	}
+
+	$stmt = mysqli_prepare($cn, "SELECT id, acct_name, email_verified FROM tbl_login WHERE email = ? AND password = ? LIMIT 1");
+
+	if (!$stmt) {
+		echo "<script>alert('Server error.'); window.location.href='login.html';</script>";
+		exit;
+	}
+
+	mysqli_stmt_bind_param($stmt, 'ss', $email, $password);
+	mysqli_stmt_execute($stmt);
+	$result = mysqli_stmt_get_result($stmt);
+	$row    = mysqli_fetch_assoc($result);
+	mysqli_stmt_close($stmt);
+
+	if ($row) {
+		// Require verified email before allowing login
+		if ((int)($row['email_verified'] ?? 0) !== 1) {
+			echo "<script>alert('Please verify your email before logging in. Click OK to resend verification.'); window.location.href='login.html?verify=1&e=" . urlencode($email) . "';</script>";
+			exit;
+		}
+
+		$_SESSION['role']      = 'student';
+		$_SESSION['user_id']   = $row['id'];
+		$_SESSION['acct_name'] = $row['acct_name'];
+		$_SESSION['email']     = $email;
+		header('Location: student_dashboard.php');
+		exit;
+	} else {
+		header('Location: login.html?err=1');
+		exit;
+	}
+} else {
+	header('Location: login.html');
+	exit;
 }
-else
-{
-echo"<script>
-alert('Login Failed')
-window.location.href = 'login.html';
-</script>";
-}	
-}
-
-?>
-
-</body>
-</html>
