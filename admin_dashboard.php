@@ -664,7 +664,7 @@ $page = $_GET['page'] ?? 'dashboard';
 		.filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 		.filter-bar input,.filter-bar select{padding:8px 14px;border:2px solid var(--border);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;outline:none;background:#faf8f5;transition:.2s}
 		.filter-bar input:focus,.filter-bar select:focus{border-color:var(--brown3);background:#fff}
-		.filter-bar input{min-width:200px}
+		.filter-bar input{min-width:0}
 
 		/* ═══════════════ ALERT ═══════════════ */
 		.alert{padding:14px 20px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:20px;display:flex;align-items:center;gap:10px;animation:slideDown .3s ease}

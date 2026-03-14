@@ -108,8 +108,10 @@ if (isset($_POST['btnreg'])) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			.card { flex-direction: column; min-height: unset; }
+			.left, .right { padding: 32px 22px; }
+			.left h1 { font-size: 24px; }
+			.right h2 { font-size: 26px; }
 	<title>E-Library | Student Sign Up</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<link rel="stylesheet" href="assets/toast.css">
@@ -379,9 +381,16 @@ if (isset($_POST['btnreg'])) {
 		}
 
 		@media (max-width: 820px) {
-			.card { flex-direction: column; }
-			.left { padding: 34px 26px; }
-			.right { padding: 34px 26px; }
+			.card { flex-direction: column; min-height: unset; }
+			.left, .right { padding: 32px 22px; }
+			.left h1 { font-size: 24px; }
+			.right h2 { font-size: 26px; }
+		}
+
+		@media (max-width: 420px) {
+			.card { border-radius: 16px; }
+			.left, .right { padding: 28px 18px; }
+			.form-group input { padding-left: 42px; }
 		}
 	</style>
 </head>

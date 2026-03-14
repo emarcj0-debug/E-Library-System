@@ -551,7 +551,7 @@ if ($cn) {
 		.search-bar { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
 		.search-bar input, .search-bar select { padding:11px 14px; border:2px solid var(--border); border-radius:14px; font-size:13px; font-family:'Poppins',sans-serif; outline:none; transition:.25s; background:#faf8f5; color:var(--brown) }
 		.search-bar input:focus, .search-bar select:focus { border-color:var(--brown3); box-shadow:0 0 0 3px rgba(109,76,65,.12); background:#fff }
-		.search-bar input { flex:1; min-width:180px; }
+		.search-bar input { flex:1; min-width:0; }
 		.search-bar button { padding:11px 16px; background:linear-gradient(135deg,var(--brown2),var(--brown)); color:var(--gold); border:none; border-radius:14px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; transition:.25s; display:inline-flex; align-items:center; gap:8px }
 		.search-bar button:hover { transform:translateY(-1px); box-shadow:0 10px 24px rgba(0,0,0,.18); }
 
