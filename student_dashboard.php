@@ -93,6 +93,17 @@ if (isset($_POST['pickup_reservation']) && $cn) {
 				$msg = "You have reached your borrow limit ($borrowLimit books).";
 				$msgType = 'error';
 			} else {
+				// Block if they already have this same book in borrow flow (safety)
+				$dupBorrow = mysqli_prepare($cn, "SELECT id FROM tbl_borrow WHERE student_id=? AND book_id=? AND status IN ('Borrowed','Pending Pickup') LIMIT 1");
+				mysqli_stmt_bind_param($dupBorrow, 'ii', $userId, $bookId);
+				mysqli_stmt_execute($dupBorrow);
+				mysqli_stmt_store_result($dupBorrow);
+				$hasDupBorrow = (mysqli_stmt_num_rows($dupBorrow) > 0);
+				mysqli_stmt_close($dupBorrow);
+				if ($hasDupBorrow) {
+					$msg = "You already have an active/pending borrow for this book.";
+					$msgType = 'warning';
+				} else {
 				// Create borrow record immediately as Borrowed. Decrement stock now.
 				try {
 					mysqli_begin_transaction($cn);
@@ -135,6 +146,7 @@ if (isset($_POST['pickup_reservation']) && $cn) {
 					$msg = 'Pickup failed. Please try again.';
 					$msgType = 'error';
 				}
+				}
 			}
 		}
 	}
@@ -159,18 +171,32 @@ if (isset($_POST['borrow_book']) && $cn) {
 	$borrowLimit = (int)($blRow['borrow_limit'] ?? 3);
 	mysqli_stmt_close($blStmt);
 
-	// Count current active borrows
-	$cntStmt = mysqli_prepare($cn, "SELECT COUNT(*) AS c FROM tbl_borrow WHERE student_id = ? AND status = 'Borrowed'");
+	// Count current active borrows (Borrowed) + pending pickup requests
+	$cntStmt = mysqli_prepare($cn, "SELECT SUM(status='Borrowed') AS borrowed_c, SUM(status='Pending Pickup') AS pending_c FROM tbl_borrow WHERE student_id = ? AND status IN ('Borrowed','Pending Pickup')");
 	mysqli_stmt_bind_param($cntStmt, 'i', $userId);
 	mysqli_stmt_execute($cntStmt);
 	$cntRes = mysqli_stmt_get_result($cntStmt);
-	$activeBorrows = (int)mysqli_fetch_assoc($cntRes)['c'];
+	$cntRow = mysqli_fetch_assoc($cntRes);
+	$activeBorrowed = (int)($cntRow['borrowed_c'] ?? 0);
+	$activePending = (int)($cntRow['pending_c'] ?? 0);
+	$activeBorrows = $activeBorrowed;
 	mysqli_stmt_close($cntStmt);
 
 	if ($activeBorrows >= $borrowLimit) {
 		$msg = "You have reached your borrow limit ($borrowLimit books). Please return a book first.";
 		$msgType = "error";
 	} else {
+		// Hard requirement: students can only have max 3 active borrow transactions (Borrowed) regardless of borrow_limit setting.
+		if ($borrowLimit > 3) { $borrowLimit = 3; }
+		if ($activeBorrowed >= 3) {
+			$msg = "You have reached the maximum of 3 borrowed books.";
+			$msgType = "error";
+		} else {
+			// Optional safety: limit pending requests too so students can't spam.
+			if (($activeBorrowed + $activePending) >= 3) {
+				$msg = "You already have 3 active borrow transactions (borrowed/pending).";
+				$msgType = "warning";
+			} else {
 		// Check quantity
 		$chk = mysqli_prepare($cn, "SELECT quantity FROM tbl_books WHERE id = ? AND quantity > 0");
 		mysqli_stmt_bind_param($chk, 'i', $bookId);
@@ -186,6 +212,17 @@ if (isset($_POST['borrow_book']) && $cn) {
 				$msg = "You already have an active or pending request for this book.";
 				$msgType = "warning";
 			} else {
+				// Block borrow if an active reservation exists for the same book
+				$rdup = mysqli_prepare($cn, "SELECT id FROM tbl_reservations WHERE student_id=? AND book_id=? AND status IN ('Requested','Ready','Borrowed') LIMIT 1");
+				mysqli_stmt_bind_param($rdup, 'ii', $userId, $bookId);
+				mysqli_stmt_execute($rdup);
+				$rres = mysqli_stmt_get_result($rdup);
+				$hasRes = (bool)mysqli_fetch_assoc($rres);
+				mysqli_stmt_close($rdup);
+				if ($hasRes) {
+					$msg = "You already have a reservation for this same book.";
+					$msgType = "warning";
+				} else {
 				// Create pending transaction; stock is reduced only when issue is confirmed by admin.
 				try {
 					$ins = mysqli_prepare($cn, "INSERT INTO tbl_borrow (student_id, book_id, status, issue_confirmed) VALUES (?, ?, 'Pending Pickup', 0)");
@@ -200,6 +237,7 @@ if (isset($_POST['borrow_book']) && $cn) {
 					$msg = 'Unable to submit request. Please logout and login again.';
 					$msgType = 'error';
 				}
+				}
 			}
 			mysqli_stmt_close($dup);
 		} else {
@@ -207,6 +245,8 @@ if (isset($_POST['borrow_book']) && $cn) {
 			$msgType = "error";
 		}
 	}
+			}
+		}
 }
 	}
 
@@ -219,6 +259,22 @@ if (isset($_POST['reserve_book']) && $cn) {
 	if ($bookId <= 0) {
 		$msg = 'Invalid book.'; $msgType = 'error';
 	} else {
+		// Enforce max 2 active reservations per student
+		$rcnt = mysqli_prepare($cn, "SELECT COUNT(*) AS c FROM tbl_reservations WHERE student_id=? AND status IN ('Requested','Ready')");
+		if ($rcnt) {
+			mysqli_stmt_bind_param($rcnt, 'i', $userId);
+			mysqli_stmt_execute($rcnt);
+			$rres = mysqli_stmt_get_result($rcnt);
+			$activeRes = (int)(mysqli_fetch_assoc($rres)['c'] ?? 0);
+			mysqli_stmt_close($rcnt);
+			if ($activeRes >= 2) {
+				$msg = 'You have reached the maximum of 2 active reservations.';
+				$msgType = 'error';
+				// stop here
+				goto __reserve_end;
+			}
+		}
+
 		// Ensure reservations table exists (in case setup.sql wasn't re-imported)
 		@mysqli_query($cn, "CREATE TABLE IF NOT EXISTS tbl_reservations (
 			id INT AUTO_INCREMENT PRIMARY KEY,
@@ -276,6 +332,7 @@ if (isset($_POST['reserve_book']) && $cn) {
 			}
 		}
 	}
+	__reserve_end:;
 }
 
 // ── Handle return request (student) ─────────────────────────
