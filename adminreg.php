@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/toast_helper.php';
 require_role('admin');
 
 if (isset($_POST['btnreg'])) {
 	$cn = db_connect();
 	if (!$cn) {
-		echo "<script>alert('Database connection failed');window.location.href='admin_dashboard.php';</script>";
-		exit;
+		toast_and_redirect('Database connection failed', 'error', 'admin_dashboard.php');
 	}
 
 	$acctName = trim($_POST['txtan'] ?? '');
@@ -16,8 +16,7 @@ if (isset($_POST['btnreg'])) {
 	$password = trim($_POST['txtpw'] ?? '');
 
 	if ($acctName === '' || $gender === '' || $username === '' || $password === '') {
-		echo "<script>alert('All fields are required');window.location.href='admin_dashboard.php';</script>";
-		exit;
+		toast_and_redirect('All fields are required', 'warning', 'admin_dashboard.php');
 	}
 
 	// Check if username already exists
@@ -27,7 +26,7 @@ if (isset($_POST['btnreg'])) {
 	$result = mysqli_stmt_get_result($check);
 
 	if (mysqli_num_rows($result) > 0) {
-		echo "<script>alert('Username already exists');window.location.href='admin_dashboard.php';</script>";
+		toast_and_redirect('Username already exists', 'error', 'admin_dashboard.php');
 		mysqli_stmt_close($check);
 		exit;
 	}
@@ -37,9 +36,9 @@ if (isset($_POST['btnreg'])) {
 	mysqli_stmt_bind_param($stmt, 'ssss', $acctName, $gender, $username, $password);
 
 	if (mysqli_stmt_execute($stmt)) {
-		echo "<script>alert('Admin registered successfully!');window.location.href='admin_dashboard.php';</script>";
+		toast_and_redirect('Admin registered successfully!', 'success', 'admin_dashboard.php');
 	} else {
-		echo "<script>alert('Registration failed');window.location.href='admin_dashboard.php';</script>";
+		toast_and_redirect('Registration failed', 'error', 'admin_dashboard.php');
 	}
 	mysqli_stmt_close($stmt);
 } else {

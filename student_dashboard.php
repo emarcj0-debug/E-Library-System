@@ -436,6 +436,7 @@ if ($cn) {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>E-Library | Student Dashboard</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link rel="stylesheet" href="assets/toast.css">
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 		* { margin:0; padding:0; box-sizing:border-box; }
@@ -726,15 +727,15 @@ if ($cn) {
 									<?php if ($isReady): ?>
 										<form method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
 											<input type="hidden" name="reservation_id" value="<?= (int)$r['id'] ?>">
-											<button type="submit" name="pickup_reservation" class="btn-return" style="background:#1b5e20" onclick="return confirm('Pick up this reserved book now? This will create a borrow record.');"><i class="fas fa-check"></i> Pick Up Now</button>
+											<button type="submit" name="pickup_reservation" class="btn-return" style="background:#1b5e20" data-confirm="Pick up this reserved book now? This will create a borrow record." data-confirm-title="Pick up reservation" data-confirm-ok="Pick up" data-confirm-cancel="Not now"><i class="fas fa-check"></i> Pick Up Now</button>
 										</form>
-										<form method="post" style="margin-top:10px" onsubmit="return confirm('Cancel this reservation?');">
+										<form method="post" style="margin-top:10px" data-confirm="Cancel this reservation?" data-confirm-title="Cancel reservation" data-confirm-ok="Cancel" data-confirm-cancel="Keep" data-confirm-danger="1">
 											<input type="hidden" name="reservation_id" value="<?= (int)$r['id'] ?>">
 											<button type="submit" name="cancel_reservation" class="btn-return" style="background:#8d6e63"><i class="fas fa-times"></i> Cancel Reservation</button>
 										</form>
 									<?php else: ?>
 										<?php if (($r['status'] ?? '') === 'Requested'): ?>
-											<form method="post" onsubmit="return confirm('Cancel this reservation request?');">
+											<form method="post" data-confirm="Cancel this reservation request?" data-confirm-title="Cancel request" data-confirm-ok="Cancel" data-confirm-cancel="Keep" data-confirm-danger="1">
 												<input type="hidden" name="reservation_id" value="<?= (int)$r['id'] ?>">
 												<button type="submit" name="cancel_reservation" class="btn-return" style="background:#8d6e63"><i class="fas fa-times"></i> Cancel Reservation</button>
 											</form>
@@ -787,7 +788,7 @@ if ($cn) {
 								<div class="action-stack">
 								<?php if ($b['status'] === 'Pending Pickup'): ?>
 									<div class="small-muted"><strong>Pending pickup:</strong> please go to the librarian to generate/confirm your OTP.</div>
-									<form method="post" style="margin-top:10px" onsubmit="return confirm('Cancel this borrow request?');">
+									<form method="post" style="margin-top:10px" data-confirm="Cancel this borrow request?" data-confirm-title="Cancel borrow" data-confirm-ok="Cancel" data-confirm-cancel="Keep" data-confirm-danger="1">
 										<input type="hidden" name="borrow_id" value="<?= (int)$b['borrow_id'] ?>">
 										<button type="submit" name="cancel_borrow" class="btn-return" style="background:#8d6e63"><i class="fas fa-times"></i> Cancel Request</button>
 									</form>
@@ -840,7 +841,7 @@ if ($cn) {
 						<div style="margin-top:12px" class="action-stack">
 							<?php if ($b['status'] === 'Pending Pickup'): ?>
 								<div class="small-muted"><strong>Pending pickup:</strong> go to the librarian to generate/confirm your OTP.</div>
-								<form method="post" style="margin-top:10px" onsubmit="return confirm('Cancel this borrow request?');">
+								<form method="post" style="margin-top:10px" data-confirm="Cancel this borrow request?" data-confirm-title="Cancel borrow" data-confirm-ok="Cancel" data-confirm-cancel="Keep" data-confirm-danger="1">
 									<input type="hidden" name="borrow_id" value="<?= (int)$b['borrow_id'] ?>">
 									<button type="submit" name="cancel_borrow" class="btn-return" style="width:100%;justify-content:center;background:#8d6e63"><i class="fas fa-times"></i> Cancel Request</button>
 								</form>
@@ -872,7 +873,8 @@ if ($cn) {
 
 </div>
 
-<script>
+	<script src="assets/toast.js"></script>
+	<script>
 function switchTab(name) {
 	document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
 	document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));

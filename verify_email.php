@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/toast_helper.php';
 
 // Load config.php if present so we can redirect to the correct hosted login page.
 $cfgFile = __DIR__ . '/config.php';
@@ -16,16 +17,12 @@ $loginUrl = ($baseUrl !== '') ? ($baseUrl . '/login.html') : 'login.html';
 
 $cn = db_connect();
 if (!$cn) {
-	$msg = 'Database connection failed.';
-	echo "<script>alert(" . json_encode($msg) . "); window.location.href=" . json_encode($loginUrl) . ";</script>";
-	exit;
+	toast_and_redirect('Database connection failed.', 'error', $loginUrl);
 }
 
 $token = trim($_GET['token'] ?? '');
 if ($token === '') {
-	$msg = 'Missing token.';
-	echo "<script>alert(" . json_encode($msg) . "); window.location.href=" . json_encode($loginUrl) . ";</script>";
-	exit;
+	toast_and_redirect('Missing token.', 'error', $loginUrl);
 }
 
 $tokenHash = hash('sha256', $token);
@@ -38,22 +35,16 @@ $row = mysqli_fetch_assoc($res);
 mysqli_stmt_close($stmt);
 
 if (!$row) {
-	$msg = 'Invalid or already-used verification link.';
-	echo "<script>alert(" . json_encode($msg) . "); window.location.href=" . json_encode($loginUrl) . ";</script>";
-	exit;
+	toast_and_redirect('Invalid or already-used verification link.', 'error', $loginUrl);
 }
 
 if ((int)$row['email_verified'] === 1) {
-	$msg = 'Your email is already verified. You can login now.';
-	echo "<script>alert(" . json_encode($msg) . "); window.location.href=" . json_encode($loginUrl) . ";</script>";
-	exit;
+	toast_and_redirect('Your email is already verified. You can login now.', 'info', $loginUrl);
 }
 
 $expires = $row['email_verify_expires'];
 if ($expires === null || strtotime($expires) < time()) {
-	$msg = 'This verification link has expired. Please request a new one from the login page.';
-	echo "<script>alert(" . json_encode($msg) . "); window.location.href=" . json_encode($loginUrl) . ";</script>";
-	exit;
+	toast_and_redirect('This verification link has expired. Please request a new one from the login page.', 'warning', $loginUrl);
 }
 
 $upd = mysqli_prepare($cn, "UPDATE tbl_login SET email_verified = 1, email_verify_token_hash = NULL, email_verify_expires = NULL WHERE id = ? LIMIT 1");
@@ -62,4 +53,4 @@ mysqli_stmt_execute($upd);
 mysqli_stmt_close($upd);
 
 $msg = 'Email verified successfully! You can login now.';
-echo "<script>alert(" . json_encode($msg) . "); window.location.href=" . json_encode($loginUrl) . ";</script>";
+toast_and_redirect($msg, 'success', $loginUrl);

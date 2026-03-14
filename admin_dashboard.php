@@ -544,6 +544,7 @@ $page = $_GET['page'] ?? 'dashboard';
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>E-Library | Admin Dashboard</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link rel="stylesheet" href="assets/toast.css">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
@@ -1042,7 +1043,7 @@ $page = $_GET['page'] ?? 'dashboard';
 									<td>
 										<div class="tbl-actions">
 											<button class="btn-sm edit" onclick='openEdit(<?= json_encode($bk) ?>)'><i class="fas fa-pen"></i> Edit</button>
-											<form method="post" action="?page=books" style="display:inline" onsubmit="return confirm('Delete this book?')">
+											<form method="post" action="?page=books" style="display:inline" data-confirm="Delete this book?" data-confirm-title="Delete book" data-confirm-ok="Delete" data-confirm-cancel="Cancel" data-confirm-danger="1">
 												<input type="hidden" name="book_id" value="<?= $bk['id'] ?>">
 												<button type="submit" name="delete_book" class="btn-sm del"><i class="fas fa-trash"></i></button>
 											</form>
@@ -1485,11 +1486,11 @@ $page = $_GET['page'] ?? 'dashboard';
 									<td>
 										<div class="tbl-actions">
 											<button class="btn-sm edit" onclick='openUserEdit(<?= json_encode($s) ?>)'><i class="fas fa-pen"></i> Edit</button>
-											<form method="post" action="?page=users" style="display:inline" onsubmit="return confirm('Reset password to password123?')">
+											<form method="post" action="?page=users" style="display:inline" data-confirm="Reset password to password123?" data-confirm-title="Reset password" data-confirm-ok="Reset" data-confirm-cancel="Cancel" data-confirm-danger="1">
 												<input type="hidden" name="user_id" value="<?= $s['id'] ?>">
 												<button type="submit" name="reset_password" class="btn-sm reset"><i class="fas fa-key"></i> Reset</button>
 											</form>
-											<form method="post" action="?page=users" style="display:inline" onsubmit="return confirm('Remove this user and all their borrow records?')">
+											<form method="post" action="?page=users" style="display:inline" data-confirm="Remove this user and all their borrow records?" data-confirm-title="Remove user" data-confirm-ok="Remove" data-confirm-cancel="Cancel" data-confirm-danger="1">
 												<input type="hidden" name="student_id" value="<?= $s['id'] ?>">
 												<button type="submit" name="delete_student" class="btn-sm del"><i class="fas fa-trash"></i></button>
 											</form>
@@ -1708,6 +1709,7 @@ $page = $_GET['page'] ?? 'dashboard';
 	</div>
 </div>
 
+<script src="assets/toast.js"></script>
 <script>
 // ═══════════════ SIDEBAR TOGGLE ═══════════════
 function toggleSidebar(){

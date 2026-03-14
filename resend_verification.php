@@ -1,22 +1,20 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/mail_helper.php';
+require_once __DIR__ . '/toast_helper.php';
 
 $cn = db_connect();
 if (!$cn) {
-	echo "<script>alert('Database connection failed.'); window.location.href='login.html';</script>";
-	exit;
+	toast_and_redirect('Database connection failed.', 'error', 'login.html');
 }
 
 $email = trim($_POST['email'] ?? '');
 if ($email === '') {
-	echo "<script>alert('Please enter your email.'); window.location.href='login.html';</script>";
-	exit;
+	toast_and_redirect('Please enter your email.', 'warning', 'login.html');
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-	echo "<script>alert('Please enter a valid email address.'); window.location.href='login.html';</script>";
-	exit;
+	toast_and_redirect('Please enter a valid email address.', 'warning', 'login.html');
 }
 
 $stmt = mysqli_prepare($cn, "SELECT id, acct_name, email, email_verified FROM tbl_login WHERE email = ? LIMIT 1");
@@ -27,13 +25,11 @@ $user = mysqli_fetch_assoc($res);
 mysqli_stmt_close($stmt);
 
 if (!$user) {
-	echo "<script>alert('Account not found.'); window.location.href='login.html';</script>";
-	exit;
+	toast_and_redirect('Account not found.', 'error', 'login.html');
 }
 
 if ((int)$user['email_verified'] === 1) {
-	echo "<script>alert('Your email is already verified. You can login now.'); window.location.href='login.html';</script>";
-	exit;
+	toast_and_redirect('Your email is already verified. You can login now.', 'info', 'login.html');
 }
 
 // Generate a fresh token
@@ -59,9 +55,7 @@ $verifyLink = $baseUrl . '/verify_email.php?token=' . urlencode($token);
 
 try {
 	send_verification_email($user['email'], $user['acct_name'], $verifyLink);
-	echo "<script>alert('Verification email re-sent. Please check your inbox.'); window.location.href='login.html';</script>";
-	exit;
+	toast_and_redirect('Verification email re-sent. Please check your inbox.', 'success', 'login.html');
 } catch (Throwable $e) {
-	echo "<script>alert('Failed to send email: " . addslashes($e->getMessage()) . "'); window.location.href='login.html';</script>";
-	exit;
+	toast_and_redirect('Failed to send email: ' . $e->getMessage(), 'error', 'login.html', 4500);
 }

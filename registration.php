@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/mail_helper.php';
+require_once __DIR__ . '/toast_helper.php';
 
 $regMsg = '';
 
@@ -15,13 +16,13 @@ if (isset($_POST['btnreg'])) {
 		$confirm = trim($_POST['txtcpw'] ?? '');
 
 		if ($a === '' || $b === '' || $email === '' || $d === '' || $confirm === '') {
-			$regMsg = "<script>alert('Please complete all fields.');</script>";
+			$regMsg = "<script>window.ELibraryToast && window.ELibraryToast.toast ? window.ELibraryToast.toast('Please complete all fields.', {type:'warning', title:'Missing info'}) : alert('Please complete all fields.');</script>";
 		} else {
 			if ($d !== $confirm) {
-				$regMsg = "<script>alert('Passwords do not match.');</script>";
+				$regMsg = "<script>window.ELibraryToast && window.ELibraryToast.toast ? window.ELibraryToast.toast('Passwords do not match.', {type:'error', title:'Check password'}) : alert('Passwords do not match.');</script>";
 			} else {
 			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-				$regMsg = "<script>alert('Please enter a valid email address.');</script>";
+				$regMsg = "<script>window.ELibraryToast && window.ELibraryToast.toast ? window.ELibraryToast.toast('Please enter a valid email address.', {type:'warning', title:'Invalid email'}) : alert('Please enter a valid email address.');</script>";
 			} else {
 				$token = bin2hex(random_bytes(32));
 				$tokenHash = hash('sha256', $token);
@@ -81,28 +82,26 @@ if (isset($_POST['btnreg'])) {
 
 						try {
 							send_verification_email($email, $a, $verifyLink);
-							echo "<script>alert('Registration Successful! Please check your email to verify your account before logging in.'); window.location.href='login.html';</script>";
-							exit;
+							toast_and_redirect('Registration successful! Please check your email to verify your account before logging in.', 'success', 'login.html', 4200);
 						} catch (Throwable $e) {
-							echo "<script>alert('Account created, but verification email failed: " . addslashes($e->getMessage()) . "'); window.location.href='login.html';</script>";
-							exit;
+							toast_and_redirect('Account created, but verification email failed: ' . $e->getMessage(), 'warning', 'login.html', 5200);
 						}
 					} else {
 						// 1062 = duplicate key
 						if ($insertError instanceof mysqli_sql_exception && (int)$insertError->getCode() === 1062) {
-							$regMsg = "<script>alert('That email is already registered. Please login instead.');</script>";
+							$regMsg = "<script>window.ELibraryToast && window.ELibraryToast.toast ? window.ELibraryToast.toast('That email is already registered. Please login instead.', {type:'warning', title:'Already registered'}) : alert('That email is already registered. Please login instead.');</script>";
 						} else {
-							$regMsg = "<script>alert('Registration failed. Please try again.');</script>";
+							$regMsg = "<script>window.ELibraryToast && window.ELibraryToast.toast ? window.ELibraryToast.toast('Registration failed. Please try again.', {type:'error', title:'Error'}) : alert('Registration failed. Please try again.');</script>";
 						}
 					}
 				} else {
-					$regMsg = "<script>alert('Server error: unable to prepare query.');</script>";
+					$regMsg = "<script>window.ELibraryToast && window.ELibraryToast.toast ? window.ELibraryToast.toast('Server error: unable to prepare query.', {type:'error', title:'Server error'}) : alert('Server error: unable to prepare query.');</script>";
 				}
 			}
 			}
 		}
 	} else {
-		$regMsg = "<script>alert('Database connection failed.');</script>";
+		$regMsg = "<script>window.ELibraryToast && window.ELibraryToast.toast ? window.ELibraryToast.toast('Database connection failed.', {type:'error', title:'Database'}) : alert('Database connection failed.');</script>";
 	}
 }
 ?>
@@ -113,6 +112,7 @@ if (isset($_POST['btnreg'])) {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>E-Library | Student Sign Up</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<link rel="stylesheet" href="assets/toast.css">
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
@@ -482,13 +482,19 @@ if (isset($_POST['btnreg'])) {
 				form.addEventListener('submit', function (e) {
 					if (pw.value !== cpw.value) {
 						e.preventDefault();
-						alert('Passwords do not match.');
+						if (window.ELibraryToast && window.ELibraryToast.toast) {
+							window.ELibraryToast.toast('Passwords do not match.', { type: 'error', title: 'Check password' });
+						} else {
+							alert('Passwords do not match.');
+						}
 						cpw.focus();
 					}
 				});
 			}
 		})();
 	</script>
+
+	<script src="assets/toast.js"></script>
 
 <?= $regMsg ?>
 </body>
