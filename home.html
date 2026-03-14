@@ -19,6 +19,7 @@
             background: #f5f0e8;
             color: #3e2723;
             min-height: 100vh;
+			overflow-x: hidden;
         }
 
         /* ===== NAVBAR ===== */
@@ -105,7 +106,7 @@
             align-items: center;
             justify-content: space-between;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
             min-height: 450px;
         }
 
@@ -379,6 +380,23 @@
         @media (max-width: 768px) {
             nav {
                 padding: 0 20px;
+                height: auto;
+                flex-wrap: wrap;
+                gap: 10px;
+                padding-top: 12px;
+                padding-bottom: 12px;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                width: 100%;
+            }
+
+            .nav-links a {
+                justify-content: center;
+                flex: 1 1 auto;
+                padding: 10px 14px;
             }
 
             .hero {
@@ -421,6 +439,13 @@
                 padding: 20px;
             }
         }
+
+		@media (max-width: 420px) {
+			.hero-content h1 { font-size: 28px; }
+			.btn { width: 100%; justify-content: center; }
+			.hero-buttons { width: 100%; flex-direction: column; }
+			.books-display { transform: scale(0.92); }
+		}
     </style>
 </head>
 <body>
