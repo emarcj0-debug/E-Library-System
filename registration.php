@@ -67,8 +67,16 @@ if (isset($_POST['btnreg'])) {
 					mysqli_stmt_close($stmt);
 
 					if ($ok) {
-						$config = require __DIR__ . '/mail_config.php';
-						$baseUrl = rtrim($config['app']['base_url'] ?? 'http://localhost/library', '/');
+						$cfgFile = __DIR__ . '/config.php';
+						$cfg = null;
+						if (file_exists($cfgFile)) {
+							$cfg = require $cfgFile;
+						}
+						// Backward compatible: if config.php isn't used, fall back to mail_config.php
+						if (!is_array($cfg)) {
+							$cfg = require __DIR__ . '/mail_config.php';
+						}
+						$baseUrl = rtrim(($cfg['app']['base_url'] ?? 'http://localhost/library'), '/');
 						$verifyLink = $baseUrl . '/verify_email.php?token=' . urlencode($token);
 
 						try {
